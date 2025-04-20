@@ -85,7 +85,7 @@ A full-stack inventory management system built with Django (backend) and React (
 
 3. Start the development server:
    ```
-   npm start
+   npm run dev
    ```
 
 4. The application should now be running at `http://localhost:3000`
