@@ -16,15 +16,15 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       // Check if token exists in localStorage
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         setIsLoading(false);
         return;
       }
-      
+
       try {
         const response = await authService.getCurrentUser();
-        
+
         if (response.data && response.data.user) {
           setUser(response.data.user);
           // Store user data in localStorage for persistence
@@ -69,14 +69,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authService.login(credentials);
-      
+
       if (response.data && response.data.user) {
         // Store token and user in localStorage
         if (response.data.token) {
           localStorage.setItem('token', response.data.token);
         }
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        
+
         setUser(response.data.user);
         setError(null);
         return true;
@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Registering with data:', userData); // Debug log
       const response = await authService.register(userData);
       console.log('Registration response:', response.data); // Debug log
-      
+
       // Auto-login after successful registration
       if (response.data && response.data.user) {
         // Store token and user in localStorage
@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('token', response.data.token);
         }
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        
+
         // Set user directly from registration response
         setUser(response.data.user);
         return true;
@@ -124,10 +124,10 @@ export const AuthProvider = ({ children }) => {
     // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
+
     // Clear state
     setUser(null);
-    
+
     // Call logout endpoint
     authService.logout();
   };
@@ -138,6 +138,11 @@ export const AuthProvider = ({ children }) => {
     return requiredRoles.includes(user.role);
   };
 
+  // Update user data
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
   const value = {
     user,
     loading,
@@ -146,6 +151,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     hasRole,
+    updateUser,
     isAuthenticated: !!user,
     isLoading,
   };
@@ -162,4 +168,4 @@ export const useAuth = () => {
   return context;
 };
 
-export default AuthContext; 
+export default AuthContext;

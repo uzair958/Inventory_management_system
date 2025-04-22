@@ -19,7 +19,12 @@ import {
   TableSortLabel,
   Stack,
   Card,
-  CardContent
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
@@ -53,6 +58,14 @@ const EditButton = styled(Button)(({ theme }) => ({
   }
 }));
 
+const DeleteButton = styled(Button)(({ theme }) => ({
+  '&::before': {
+    content: '"🗑️"',
+    marginRight: theme.spacing(1),
+    fontSize: '0.9rem'
+  }
+}));
+
 const StoreList = () => {
   const { user } = useAuth();
   const [stores, setStores] = useState([]);
@@ -61,6 +74,8 @@ const StoreList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [storeToDelete, setStoreToDelete] = useState(null);
 
   const isAdmin = user && user.role === 'admin';
   const isManagerOrAdmin = user && (user.role === 'manager' || user.role === 'admin');
@@ -70,7 +85,7 @@ const StoreList = () => {
       try {
         setLoading(true);
         const response = await storeService.getAllStores();
-        
+
         // Handle different response formats
         if (response.data) {
           if (Array.isArray(response.data)) {
@@ -110,10 +125,10 @@ const StoreList = () => {
   const sortedStores = Array.isArray(stores) ? [...stores].sort((a, b) => {
     let aValue = a[sortField] || '';
     let bValue = b[sortField] || '';
-    
+
     if (typeof aValue === 'string') aValue = aValue.toLowerCase();
     if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-    
+
     if (sortDirection === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -130,15 +145,27 @@ const StoreList = () => {
     );
   });
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this store?')) {
-      try {
-        await storeService.deleteStore(id);
-        setStores(stores.filter(store => store.id !== id));
-      } catch (err) {
-        setError('Failed to delete store. It may have associated products.');
-        console.error(err);
-      }
+  const openDeleteConfirm = (store) => {
+    setStoreToDelete(store);
+    setDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    setStoreToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!storeToDelete) return;
+
+    try {
+      await storeService.deleteStore(storeToDelete.id);
+      setStores(stores.filter(store => store.id !== storeToDelete.id));
+      closeDeleteConfirm();
+    } catch (err) {
+      setError('Failed to delete store. It may have associated products.');
+      console.error(err);
+      closeDeleteConfirm();
     }
   };
 
@@ -156,10 +183,10 @@ const StoreList = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4" component="h1">Stores</Typography>
         {isManagerOrAdmin && (
-          <AddButton 
-            component={StyledLink} 
-            to="/stores/new" 
-            variant="contained" 
+          <AddButton
+            component={StyledLink}
+            to="/stores/new"
+            variant="contained"
             color="primary"
           >
             Add New Store
@@ -256,6 +283,16 @@ const StoreList = () => {
                           Edit
                         </EditButton>
                       )}
+                      {isAdmin && (
+                        <DeleteButton
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          onClick={() => openDeleteConfirm(store)}
+                        >
+                          Delete
+                        </DeleteButton>
+                      )}
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -264,8 +301,34 @@ const StoreList = () => {
           </Table>
         </TableContainer>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Store
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete the store "{storeToDelete?.name}"? This action cannot be undone.
+            Any products associated with this store will need to be reassigned.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirm} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
 
-export default StoreList; 
+export default StoreList;

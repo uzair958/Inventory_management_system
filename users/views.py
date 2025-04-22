@@ -156,6 +156,60 @@ def get_current_user(request):
             'id': request.user.id,
             'username': request.user.username,
             'email': request.user.email,
-            'role': request.user.role
+            'role': request.user.role,
+            'firstName': request.user.first_name,
+            'lastName': request.user.last_name
         }
     })
+
+@csrf_exempt
+def update_profile(request):
+    """
+    Update the current user's profile information.
+    """
+    if request.method != 'PUT' and request.method != 'POST':
+        return JsonResponse({'error': 'Only PUT and POST methods are allowed'}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        user = request.user
+
+        # Update fields if provided
+        if 'firstName' in data:
+            user.first_name = data['firstName']
+        if 'lastName' in data:
+            user.last_name = data['lastName']
+        if 'email' in data:
+            # Check if email is already taken by another user
+            if CustomUser.objects.exclude(id=user.id).filter(email=data['email']).exists():
+                return JsonResponse({'error': 'Email already in use by another account'}, status=400)
+            user.email = data['email']
+        if 'phone' in data:
+            # Assuming you have a phone field in your CustomUser model
+            # If not, you'll need to add it or remove this part
+            if hasattr(user, 'phone'):
+                user.phone = data['phone']
+
+        # Save the updated user
+        user.save()
+
+        return JsonResponse({
+            'message': 'Profile updated successfully',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'firstName': user.first_name,
+                'lastName': user.last_name
+            }
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Profile update error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)

@@ -8,7 +8,7 @@ const getCSRFToken = () => {
   const name = 'csrftoken=';
   const decodedCookie = decodeURIComponent(document.cookie);
   const cookieArray = decodedCookie.split(';');
-  
+
   for (let i = 0; i < cookieArray.length; i++) {
     let cookie = cookieArray[i].trim();
     if (cookie.indexOf(name) === 0) {
@@ -37,7 +37,7 @@ api.interceptors.request.use(
     if (csrfToken) {
       config.headers['X-CSRFToken'] = csrfToken;
     }
-    
+
     const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -79,6 +79,9 @@ const userService = {
   },
   deleteUser: (id) => {
     return api.delete(`/auth/users/${id}/`);
+  },
+  updateProfile: (profileData) => {
+    return api.put('/auth/profile/update/', profileData);
   },
 };
 
