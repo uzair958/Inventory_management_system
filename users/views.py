@@ -57,13 +57,33 @@ def register_user(request):
             role=role
         )
 
+        # If the user is a staff member and store_ids are provided, assign them to stores
+        if role == 'staff' and 'store_ids' in data and isinstance(data['store_ids'], list):
+            from products.models import Store
+            for store_id in data['store_ids']:
+                try:
+                    store = Store.objects.get(id=store_id)
+                    store.employees.add(user)
+                except Store.DoesNotExist:
+                    pass
+
+        # Get assigned stores for response
+        assigned_stores = []
+        if role == 'staff':
+            for store in user.assigned_stores.all():
+                assigned_stores.append({
+                    'id': store.id,
+                    'name': store.name
+                })
+
         return JsonResponse({
             'message': 'User registered successfully',
             'user': {
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
-                'role': user.role
+                'role': user.role,
+                'assigned_stores': assigned_stores
             }
         }, status=201)
 
@@ -151,6 +171,15 @@ def get_current_user(request):
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Not authenticated'}, status=401)
 
+    # Get assigned stores if user is staff
+    assigned_stores = []
+    if request.user.role == 'staff':
+        for store in request.user.assigned_stores.all():
+            assigned_stores.append({
+                'id': store.id,
+                'name': store.name
+            })
+
     return JsonResponse({
         'user': {
             'id': request.user.id,
@@ -158,7 +187,8 @@ def get_current_user(request):
             'email': request.user.email,
             'role': request.user.role,
             'firstName': request.user.first_name,
-            'lastName': request.user.last_name
+            'lastName': request.user.last_name,
+            'assigned_stores': assigned_stores
         }
     })
 
@@ -212,4 +242,246 @@ def update_profile(request):
         return JsonResponse({'error': 'Invalid JSON data'}, status=400)
     except Exception as e:
         logger.error(f"Profile update error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def list_users(request):
+    """
+    Get a list of all users.
+    Only accessible by admin users.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    # Check if user is admin
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    users = CustomUser.objects.all()
+    user_data = []
+
+    for user in users:
+        user_data.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': user.role,
+            'is_active': user.is_active,
+            'date_joined': user.date_joined.isoformat(),
+            'first_name': user.first_name,
+            'last_name': user.last_name
+        })
+
+    return JsonResponse({'users': user_data})
+
+@csrf_exempt
+def list_managers(request):
+    """
+    Get a list of all users with manager role.
+    Accessible by all authenticated users.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    # Get all users with manager role
+    managers = CustomUser.objects.filter(role='manager')
+    manager_data = []
+
+    for manager in managers:
+        manager_data.append({
+            'id': manager.id,
+            'username': manager.username,
+            'email': manager.email,
+            'first_name': manager.first_name,
+            'last_name': manager.last_name
+        })
+
+    return JsonResponse({'users': manager_data})
+
+@csrf_exempt
+def list_staff(request):
+    """
+    Get a list of all users with staff role.
+    Accessible by all authenticated users.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    # Get all users with staff role
+    staff = CustomUser.objects.filter(role='staff')
+    staff_data = []
+
+    for employee in staff:
+        staff_data.append({
+            'id': employee.id,
+            'username': employee.username,
+            'email': employee.email,
+            'first_name': employee.first_name,
+            'last_name': employee.last_name
+        })
+
+    return JsonResponse({'users': staff_data})
+
+@csrf_exempt
+def get_user(request, user_id):
+    """
+    Get details of a specific user.
+    Only accessible by admin users or the user themselves.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    # Check if user is admin or the user themselves
+    if request.user.role != 'admin' and request.user.id != user_id:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        user = CustomUser.objects.get(id=user_id)
+
+        # Get assigned stores if user is staff
+        assigned_stores = []
+        if user.role == 'staff':
+            for store in user.assigned_stores.all():
+                assigned_stores.append({
+                    'id': store.id,
+                    'name': store.name
+                })
+
+        return JsonResponse({
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'is_active': user.is_active,
+                'date_joined': user.date_joined.isoformat(),
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'assigned_stores': assigned_stores
+            }
+        })
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+
+@csrf_exempt
+def update_user_role(request, user_id):
+    """
+    Update a user's role.
+    Only accessible by admin users.
+    """
+    if request.method != 'PUT' and request.method != 'POST':
+        return JsonResponse({'error': 'Only PUT and POST methods are allowed'}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    # Check if user is admin
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        role = data.get('role')
+
+        if not role:
+            return JsonResponse({'error': 'Role is required'}, status=400)
+
+        if role not in [r[0] for r in CustomUser.ROLE_CHOICES]:
+            return JsonResponse({'error': f'Invalid role. Must be one of: {", ".join([r[0] for r in CustomUser.ROLE_CHOICES])}'}, status=400)
+
+        try:
+            user = CustomUser.objects.get(id=user_id)
+
+            # Prevent non-superusers from modifying admin users
+            if user.role == 'admin' and not request.user.is_superuser:
+                return JsonResponse({'error': 'Only superusers can modify admin users'}, status=403)
+
+            # If changing to staff role and store_ids are provided, assign them to stores
+            if role == 'staff' and 'store_ids' in data and isinstance(data['store_ids'], list):
+                from products.models import Store
+                # Clear existing store assignments
+                for store in user.assigned_stores.all():
+                    store.employees.remove(user)
+
+                # Add new store assignments
+                for store_id in data['store_ids']:
+                    try:
+                        store = Store.objects.get(id=store_id)
+                        store.employees.add(user)
+                    except Store.DoesNotExist:
+                        pass
+
+            # If changing from staff to another role, remove from all stores
+            if user.role == 'staff' and role != 'staff':
+                for store in user.assigned_stores.all():
+                    store.employees.remove(user)
+
+            user.role = role
+            user.save()
+
+            # Get assigned stores for response
+            assigned_stores = []
+            if role == 'staff':
+                for store in user.assigned_stores.all():
+                    assigned_stores.append({
+                        'id': store.id,
+                        'name': store.name
+                    })
+
+            return JsonResponse({
+                'message': 'User role updated successfully',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'role': user.role,
+                    'assigned_stores': assigned_stores
+                }
+            })
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Role update error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def delete_user(request, user_id):
+    """
+    Delete a user.
+    Only accessible by admin users.
+    """
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Only DELETE method is allowed'}, status=405)
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    # Check if user is admin
+    if request.user.role != 'admin':
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        user = CustomUser.objects.get(id=user_id)
+
+        # Prevent non-superusers from deleting admin users
+        if user.role == 'admin' and not request.user.is_superuser:
+            return JsonResponse({'error': 'Only superusers can delete admin users'}, status=403)
+
+        # Prevent users from deleting themselves
+        if user.id == request.user.id:
+            return JsonResponse({'error': 'You cannot delete your own account'}, status=400)
+
+        username = user.username
+        user.delete()
+
+        return JsonResponse({
+            'message': f'User {username} deleted successfully'
+        })
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    except Exception as e:
+        logger.error(f"User deletion error: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)

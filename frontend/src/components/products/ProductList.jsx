@@ -112,7 +112,7 @@ const ProductList = () => {
       try {
         setLoading(true);
         const response = await productService.getAllProducts();
-        
+
         // Handle different response formats
         if (response.data) {
           if (Array.isArray(response.data)) {
@@ -131,7 +131,12 @@ const ProductList = () => {
       } catch (err) {
         console.error('Error fetching products:', err);
         setProducts([]);
-        setError('Failed to fetch products. Please try again later.');
+        // Use the error message from the server if available
+        if (err.response && err.response.data && err.response.data.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Failed to fetch products. Please try again later.');
+        }
       } finally {
         setLoading(false);
       }
@@ -150,16 +155,16 @@ const ProductList = () => {
   const sortedProducts = Array.isArray(products) ? [...products].sort((a, b) => {
     let aValue = a[sortField] || '';
     let bValue = b[sortField] || '';
-    
+
     if (typeof aValue === 'string') aValue = aValue.toLowerCase();
     if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-    
+
     // For price, convert to number first
     if (sortField === 'price') {
       aValue = parseFloat(aValue);
       bValue = parseFloat(bValue);
     }
-    
+
     if (sortDirection === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -198,14 +203,19 @@ const ProductList = () => {
 
   const handleDelete = async () => {
     if (!productToDelete) return;
-    
+
     try {
       await productService.deleteProduct(productToDelete.id);
       setProducts(products.filter(product => product.id !== productToDelete.id));
       closeDeleteConfirm();
     } catch (err) {
-      setError('Failed to delete product. It may have associated data.');
-      console.error(err);
+      console.error('Failed to delete product:', err);
+      // Use the error message from the server if available
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Failed to delete product. It may have associated data.');
+      }
     }
   };
 
@@ -223,10 +233,10 @@ const ProductList = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4" component="h1">Products</Typography>
         {isManagerOrAdmin && (
-          <AddButton 
-            component={StyledLink} 
-            to="/products/new" 
-            variant="contained" 
+          <AddButton
+            component={StyledLink}
+            to="/products/new"
+            variant="contained"
             color="primary"
           >
             Add New Product
@@ -376,7 +386,7 @@ const ProductList = () => {
           </Table>
         </TableContainer>
       )}
-      
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteConfirmOpen}
@@ -401,4 +411,4 @@ const ProductList = () => {
   );
 };
 
-export default ProductList; 
+export default ProductList;

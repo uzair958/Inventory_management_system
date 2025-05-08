@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -47,12 +48,16 @@ function App() {
                 <Route path="/stores/:id/edit" element={<StoreForm />} />
                 <Route path="/suppliers" element={<SupplierList />} />
                 <Route path="/suppliers/:id" element={<SupplierDetail />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
+
+              {/* Admin-only Routes */}
+              <Route element={<AdminRoute />}>
                 <Route path="/suppliers/new" element={<SupplierForm />} />
                 <Route path="/suppliers/:id/edit" element={<SupplierForm />} />
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="/users/:id" element={<UserDetail />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<Settings />} />
               </Route>
 
               {/* Not Found */}

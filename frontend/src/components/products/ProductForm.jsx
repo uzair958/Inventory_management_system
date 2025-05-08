@@ -4,21 +4,23 @@ import { productService, storeService, supplierService } from '../../utils/api';
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Card,
   CardContent,
   Grid,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
   Alert,
   CircularProgress,
   Divider,
   InputAdornment
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import {
+  StyledTextField,
+  StyledFormControl,
+  StyledSelect,
+  StyledMenuItem,
+  StyledInputLabel
+} from '../common/FormStyles';
 
 // Styled components for CSS-based icons
 const StyledLink = styled(Link)({
@@ -70,9 +72,10 @@ const ProductForm = () => {
     supplier_id: '',
     store_id: preselectedStoreId || ''
   });
-  
+
   const [stores, setStores] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
+  const [allSuppliers, setAllSuppliers] = useState([]);
+  const [filteredSuppliers, setFilteredSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -85,18 +88,19 @@ const ProductForm = () => {
           storeService.getAllStores(),
           supplierService.getAllSuppliers()
         ]);
-        
+
         // Handle different API response formats
         const storesList = storesResponse.data.stores || storesResponse.data || [];
         const suppliersList = suppliersResponse.data.suppliers || suppliersResponse.data || [];
-        
+
         setStores(storesList);
-        setSuppliers(suppliersList);
-        
+        setAllSuppliers(suppliersList);
+        setFilteredSuppliers(suppliersList);
+
         if (isEditMode) {
           const productResponse = await productService.getProduct(id);
           const product = productResponse.data.product || productResponse.data;
-          
+
           setFormData({
             name: product.name || '',
             sku: product.sku || '',
@@ -109,8 +113,13 @@ const ProductForm = () => {
           });
         }
       } catch (err) {
-        setError('Failed to load form data');
-        console.error(err);
+        console.error('Failed to load form data:', err);
+        // Use the error message from the server if available
+        if (err.response && err.response.data && err.response.data.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Failed to load form data. Please try again later.');
+        }
       } finally {
         setLoading(false);
       }
@@ -118,6 +127,30 @@ const ProductForm = () => {
 
     fetchData();
   }, [id, isEditMode, preselectedStoreId]);
+
+  // Filter suppliers when store changes
+  useEffect(() => {
+    if (formData.store_id) {
+      // Find the selected store
+      const selectedStore = stores.find(store => store.id === formData.store_id);
+
+      if (selectedStore) {
+        // If the store has suppliers property, filter suppliers by those connected to the store
+        if (selectedStore.suppliers && Array.isArray(selectedStore.suppliers)) {
+          const storeSupplierIds = selectedStore.suppliers.map(supplier => supplier.id);
+          setFilteredSuppliers(allSuppliers.filter(supplier => storeSupplierIds.includes(supplier.id)));
+        } else {
+          // If no suppliers are explicitly connected to the store, show all suppliers
+          setFilteredSuppliers(allSuppliers);
+        }
+      } else {
+        setFilteredSuppliers(allSuppliers);
+      }
+    } else {
+      // If no store is selected, show all suppliers
+      setFilteredSuppliers(allSuppliers);
+    }
+  }, [formData.store_id, stores, allSuppliers]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -130,6 +163,19 @@ const ProductForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate that the selected supplier serves the selected store
+    if (formData.store_id && formData.supplier_id) {
+      const selectedStore = stores.find(store => store.id === formData.store_id);
+
+      if (selectedStore && selectedStore.supplier_ids &&
+          Array.isArray(selectedStore.supplier_ids) &&
+          !selectedStore.supplier_ids.includes(formData.supplier_id)) {
+        setError('The selected supplier does not serve the selected store. Please select a valid supplier for this store.');
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
@@ -152,8 +198,13 @@ const ProductForm = () => {
         navigate('/products');
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save product');
-      console.error(err);
+      console.error('Failed to save product:', err);
+      // Use the error message from the server if available
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Failed to save product. Please try again later.');
+      }
       setSubmitting(false);
     }
   };
@@ -173,9 +224,9 @@ const ProductForm = () => {
         <Typography variant="h4" component="h1">
           {isEditMode ? 'Edit Product' : 'Add New Product'}
         </Typography>
-        <BackButton 
-          component={StyledLink} 
-          to={preselectedStoreId ? `/stores/${preselectedStoreId}` : "/products"} 
+        <BackButton
+          component={StyledLink}
+          to={preselectedStoreId ? `/stores/${preselectedStoreId}` : "/products"}
           variant="outlined"
         >
           Back to {preselectedStoreId ? 'Store' : 'Products'}
@@ -187,9 +238,9 @@ const ProductForm = () => {
       <Card>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
+            <Grid container spacing={4}>
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Product Name"
                   name="name"
@@ -199,9 +250,9 @@ const ProductForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="SKU"
                   name="sku"
@@ -211,9 +262,9 @@ const ProductForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Description"
                   name="description"
@@ -224,9 +275,9 @@ const ProductForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={4}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Price ($)"
                   name="price"
@@ -241,9 +292,9 @@ const ProductForm = () => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={4}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Quantity"
                   name="quantity"
@@ -255,9 +306,9 @@ const ProductForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={4}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Low Stock Threshold"
                   name="threshold"
@@ -270,54 +321,54 @@ const ProductForm = () => {
                   helperText="Alert when stock falls below"
                 />
               </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth required disabled={submitting}>
-                  <InputLabel id="supplier-label">Supplier</InputLabel>
-                  <Select
+
+              <Grid item xs={12} md={6} sx={{ mb: 2 }}>
+                <StyledFormControl fullWidth required disabled={submitting}>
+                  <StyledInputLabel id="supplier-label">Supplier</StyledInputLabel>
+                  <StyledSelect
                     labelId="supplier-label"
                     name="supplier_id"
                     value={formData.supplier_id}
                     onChange={handleChange}
                     label="Supplier"
                   >
-                    <MenuItem value="">
+                    <StyledMenuItem value="">
                       <em>Select a supplier</em>
-                    </MenuItem>
-                    {suppliers.map(supplier => (
-                      <MenuItem key={supplier.id} value={supplier.id}>
+                    </StyledMenuItem>
+                    {filteredSuppliers.map(supplier => (
+                      <StyledMenuItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
-                      </MenuItem>
+                      </StyledMenuItem>
                     ))}
-                  </Select>
-                </FormControl>
+                  </StyledSelect>
+                </StyledFormControl>
               </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth required={!preselectedStoreId} disabled={!!preselectedStoreId || submitting}>
-                  <InputLabel id="store-label">Store</InputLabel>
-                  <Select
+
+              <Grid item xs={12} md={6} sx={{ mb: 2 }}>
+                <StyledFormControl fullWidth required={!preselectedStoreId} disabled={!!preselectedStoreId || submitting}>
+                  <StyledInputLabel id="store-label">Store</StyledInputLabel>
+                  <StyledSelect
                     labelId="store-label"
                     name="store_id"
                     value={formData.store_id}
                     onChange={handleChange}
                     label="Store"
                   >
-                    <MenuItem value="">
+                    <StyledMenuItem value="">
                       <em>Select a store</em>
-                    </MenuItem>
+                    </StyledMenuItem>
                     {stores.map(store => (
-                      <MenuItem key={store.id} value={store.id}>
+                      <StyledMenuItem key={store.id} value={store.id}>
                         {store.name}
-                      </MenuItem>
+                      </StyledMenuItem>
                     ))}
-                  </Select>
-                </FormControl>
+                  </StyledSelect>
+                </StyledFormControl>
               </Grid>
             </Grid>
-            
+
             <Divider sx={{ my: 4 }} />
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               <CancelButton
                 component={StyledLink}
@@ -344,4 +395,4 @@ const ProductForm = () => {
   );
 };
 
-export default ProductForm; 
+export default ProductForm;

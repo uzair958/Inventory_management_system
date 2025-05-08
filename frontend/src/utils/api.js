@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Update URL to point to Django's default port
-const API_URL = 'http://localhost:8000/api';
+// Update URL to point to Django's current port
+const API_URL = 'http://localhost:8080/api';
 
 // Function to get CSRF token from cookies
 const getCSRFToken = () => {
@@ -71,6 +71,12 @@ const userService = {
   getAllUsers: () => {
     return api.get('/auth/users/');
   },
+  getAllManagers: () => {
+    return api.get('/auth/managers/');
+  },
+  getAllStaff: () => {
+    return api.get('/auth/staff/');
+  },
   getUserById: (id) => {
     return api.get(`/auth/users/${id}/`);
   },
@@ -78,7 +84,7 @@ const userService = {
     return api.put(`/auth/users/${id}/role/`, roleData);
   },
   deleteUser: (id) => {
-    return api.delete(`/auth/users/${id}/`);
+    return api.delete(`/auth/users/${id}/delete/`);
   },
   updateProfile: (profileData) => {
     return api.put('/auth/profile/update/', profileData);

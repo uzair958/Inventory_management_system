@@ -1,19 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Button, 
-  Box, 
-  IconButton, 
-  Menu, 
-  MenuItem, 
-  Divider, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
   ListItemText,
   Avatar,
   Drawer,
@@ -142,7 +142,7 @@ const Navbar = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -177,7 +177,9 @@ const Navbar = () => {
     { path: '/products', label: 'Products', icon: <ProductsIcon /> },
     { path: '/stores', label: 'Stores', icon: <StoresIcon /> },
     { path: '/suppliers', label: 'Suppliers', icon: <SuppliersIcon /> },
-    ...(user?.role === 'admin' ? [{ path: '/users', label: 'Users', icon: <UsersIcon /> }] : []),
+    ...(user?.role === 'admin' ? [
+      { path: '/users', label: 'Users', icon: <UsersIcon /> }
+    ] : []),
   ] : [
     { path: '/login', label: 'Login', icon: <LoginIcon /> },
     { path: '/register', label: 'Register', icon: <RegisterIcon /> },
@@ -193,12 +195,12 @@ const Navbar = () => {
       <Divider />
       <List>
         {navItems.map((item) => (
-          <ListItem 
-            button 
-            component={StyledLink} 
-            to={item.path} 
+          <ListItem
+            button
+            component={StyledLink}
+            to={item.path}
             key={item.path}
-            sx={{ 
+            sx={{
               color: isActive(item.path) ? 'primary.main' : 'text.primary',
               bgcolor: isActive(item.path) ? 'action.selected' : 'transparent',
             }}
@@ -225,13 +227,13 @@ const Navbar = () => {
               sx={{ mr: 2 }}
             />
           )}
-          
+
           <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 4 }}>
             <StyledLink to="/">
               Inventory MS
             </StyledLink>
           </Typography>
-          
+
           {!isMobile && (
             <Box sx={{ flexGrow: 1, display: 'flex' }}>
               {navItems.map((item) => (
@@ -247,7 +249,7 @@ const Navbar = () => {
               ))}
             </Box>
           )}
-          
+
           {isAuthenticated && (
             <Box>
               <Button
@@ -255,12 +257,12 @@ const Navbar = () => {
                 color="inherit"
                 endIcon={<ArrowDownIcon />}
                 startIcon={
-                  <Avatar 
-                    sx={{ 
-                      width: 30, 
-                      height: 30, 
-                      bgcolor: 'primary.main', 
-                      fontSize: '0.875rem' 
+                  <Avatar
+                    sx={{
+                      width: 30,
+                      height: 30,
+                      bgcolor: 'primary.main',
+                      fontSize: '0.875rem'
                     }}
                   >
                     {user?.username?.charAt(0)?.toUpperCase() || 'U'}
@@ -307,7 +309,7 @@ const Navbar = () => {
           )}
         </Toolbar>
       </AppBar>
-      
+
       <Drawer
         variant="temporary"
         open={mobileOpen}
@@ -324,4 +326,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

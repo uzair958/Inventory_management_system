@@ -95,8 +95,13 @@ const ProductDetail = () => {
           throw new Error('Invalid product data received');
         }
       } catch (err) {
-        setError('Failed to load product details');
-        console.error(err);
+        console.error('Failed to load product details:', err);
+        // Use the error message from the server if available
+        if (err.response && err.response.data && err.response.data.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Failed to load product details. Please try again later.');
+        }
       } finally {
         setLoading(false);
       }
@@ -108,7 +113,7 @@ const ProductDetail = () => {
   const getStockStatus = (product) => {
     const quantity = product.stock_count || product.quantity || 0;
     const threshold = product.threshold || 10;
-    
+
     if (quantity <= 0) {
       return 'Out of Stock';
     } else if (quantity <= threshold) {
@@ -131,8 +136,13 @@ const ProductDetail = () => {
       await productService.deleteProduct(id);
       navigate('/products');
     } catch (err) {
-      setError('Failed to delete product');
-      console.error(err);
+      console.error('Failed to delete product:', err);
+      // Use the error message from the server if available
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Failed to delete product. Please try again later.');
+      }
     } finally {
       closeDeleteConfirm();
     }
@@ -153,10 +163,10 @@ const ProductDetail = () => {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
-        <Button 
-          component={StyledLink} 
-          to="/products" 
-          variant="contained" 
+        <Button
+          component={StyledLink}
+          to="/products"
+          variant="contained"
           color="primary"
         >
           Back to Products
@@ -171,10 +181,10 @@ const ProductDetail = () => {
         <Alert severity="warning" sx={{ mb: 3 }}>
           The product you are looking for does not exist or has been removed.
         </Alert>
-        <Button 
-          component={StyledLink} 
-          to="/products" 
-          variant="contained" 
+        <Button
+          component={StyledLink}
+          to="/products"
+          variant="contained"
           color="primary"
         >
           Back to Products
@@ -193,9 +203,9 @@ const ProductDetail = () => {
           {product.name}
         </Typography>
         <Stack direction="row" spacing={2}>
-          <BackButton 
-            component={StyledLink} 
-            to="/products" 
+          <BackButton
+            component={StyledLink}
+            to="/products"
             variant="outlined"
           >
             Back to Products
@@ -228,17 +238,17 @@ const ProductDetail = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>Product Information</Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">SKU</Typography>
                 <Typography variant="body1">{product.sku || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Description</Typography>
                 <Typography variant="body1">{product.description || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Supplier</Typography>
                 <Typography variant="body1">
@@ -249,7 +259,7 @@ const ProductDetail = () => {
                   ) : 'N/A'}
                 </Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Store</Typography>
                 <Typography variant="body1">
@@ -260,7 +270,7 @@ const ProductDetail = () => {
                   ) : 'N/A'}
                 </Typography>
               </Box>
-              
+
               {product.category && (
                 <Box sx={{ mb: 1 }}>
                   <Typography variant="body2" color="text.secondary">Category</Typography>
@@ -270,13 +280,13 @@ const ProductDetail = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>Inventory Statistics</Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={4}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
@@ -284,14 +294,14 @@ const ProductDetail = () => {
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>Price</Typography>
                   </Paper>
                 </Grid>
-                
+
                 <Grid item xs={4}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4">{stockCount}</Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>Quantity</Typography>
                   </Paper>
                 </Grid>
-                
+
                 <Grid item xs={4}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
@@ -304,7 +314,7 @@ const ProductDetail = () => {
                   </Paper>
                 </Grid>
               </Grid>
-              
+
               <Box sx={{ mt: 2 }}>
                 <Typography variant="body2" color="text.secondary">Threshold</Typography>
                 <Typography variant="body1">{product.threshold || 'N/A'}</Typography>
@@ -319,7 +329,7 @@ const ProductDetail = () => {
           <CardContent>
             <Typography variant="h6" gutterBottom>Available at Stores</Typography>
             <Divider sx={{ mb: 2 }} />
-            
+
             <Grid container spacing={2}>
               {product.stores.map(store => (
                 <Grid item xs={12} sm={6} md={4} key={store.id}>
@@ -333,8 +343,8 @@ const ProductDetail = () => {
                         Stock: {store.pivot?.stock_count || 0}
                       </Typography>
                       <Box sx={{ mt: 2 }}>
-                        <Button 
-                          component={StyledLink} 
+                        <Button
+                          component={StyledLink}
                           to={`/stores/${store.id}`}
                           size="small"
                           variant="outlined"
@@ -375,4 +385,4 @@ const ProductDetail = () => {
   );
 };
 
-export default ProductDetail; 
+export default ProductDetail;

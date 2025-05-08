@@ -123,8 +123,31 @@ const StoreList = () => {
 
   // Only sort if stores is an array
   const sortedStores = Array.isArray(stores) ? [...stores].sort((a, b) => {
-    let aValue = a[sortField] || '';
-    let bValue = b[sortField] || '';
+    let aValue, bValue;
+
+    // Special handling for manager field
+    if (sortField === 'manager') {
+      // Extract manager name for sorting
+      if (a.manager) {
+        aValue = typeof a.manager === 'object'
+          ? (a.manager.name || a.manager.username || '')
+          : a.manager;
+      } else {
+        aValue = '';
+      }
+
+      if (b.manager) {
+        bValue = typeof b.manager === 'object'
+          ? (b.manager.name || b.manager.username || '')
+          : b.manager;
+      } else {
+        bValue = '';
+      }
+    } else {
+      // Normal sorting for other fields
+      aValue = a[sortField] || '';
+      bValue = b[sortField] || '';
+    }
 
     if (typeof aValue === 'string') aValue = aValue.toLowerCase();
     if (typeof bValue === 'string') bValue = bValue.toLowerCase();
@@ -138,10 +161,20 @@ const StoreList = () => {
 
   // Only filter if sortedStores is an array
   const filteredStores = sortedStores.filter((store) => {
+    // Get manager name for searching
+    let managerName = '';
+    if (store.manager) {
+      if (typeof store.manager === 'object') {
+        managerName = store.manager.name || store.manager.username || '';
+      } else {
+        managerName = store.manager;
+      }
+    }
+
     return (
       store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (store.location && store.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (store.manager && store.manager.toLowerCase().includes(searchTerm.toLowerCase()))
+      managerName.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -259,7 +292,13 @@ const StoreList = () => {
                 <TableRow key={store.id}>
                   <TableCell>{store.name}</TableCell>
                   <TableCell>{store.location || 'N/A'}</TableCell>
-                  <TableCell>{store.manager || 'N/A'}</TableCell>
+                  <TableCell>
+                    {store.manager
+                      ? (typeof store.manager === 'object'
+                          ? (store.manager.name || store.manager.username)
+                          : store.manager)
+                      : 'N/A'}
+                  </TableCell>
                   <TableCell>{store.productCount || 0}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1}>

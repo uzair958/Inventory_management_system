@@ -107,7 +107,7 @@ const SupplierList = () => {
       try {
         setLoading(true);
         const response = await supplierService.getAllSuppliers();
-        
+
         // Handle different response formats
         if (response.data) {
           if (Array.isArray(response.data)) {
@@ -145,10 +145,10 @@ const SupplierList = () => {
   const sortedSuppliers = Array.isArray(suppliers) ? [...suppliers].sort((a, b) => {
     let aValue = a[sortField] || '';
     let bValue = b[sortField] || '';
-    
+
     if (typeof aValue === 'string') aValue = aValue.toLowerCase();
     if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-    
+
     if (sortDirection === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -178,7 +178,7 @@ const SupplierList = () => {
 
   const handleDelete = async () => {
     if (!supplierToDelete) return;
-    
+
     try {
       await supplierService.deleteSupplier(supplierToDelete.id);
       setSuppliers(suppliers.filter(supplier => supplier.id !== supplierToDelete.id));
@@ -202,11 +202,11 @@ const SupplierList = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4" component="h1">Suppliers</Typography>
-        {isManagerOrAdmin && (
-          <AddButton 
-            component={StyledLink} 
-            to="/suppliers/new" 
-            variant="contained" 
+        {isAdmin && (
+          <AddButton
+            component={StyledLink}
+            to="/suppliers/new"
+            variant="contained"
             color="primary"
           >
             Add New Supplier
@@ -241,7 +241,7 @@ const SupplierList = () => {
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="body1">
-              No suppliers found. {isManagerOrAdmin && 'Add a new supplier to get started.'}
+              No suppliers found. {isAdmin && 'Add a new supplier to get started.'}
             </Typography>
           </CardContent>
         </Card>
@@ -309,7 +309,7 @@ const SupplierList = () => {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>{supplier.product_count || 0}</TableCell>
+                  <TableCell>{supplier.productCount || 0}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1}>
                       <ViewButton
@@ -321,7 +321,7 @@ const SupplierList = () => {
                       >
                         View
                       </ViewButton>
-                      {isManagerOrAdmin && (
+                      {isAdmin && (
                         <EditButton
                           component={StyledLink}
                           to={`/suppliers/${supplier.id}/edit`}
@@ -360,10 +360,10 @@ const SupplierList = () => {
         <DialogContent>
           <DialogContentText>
             Are you sure you want to delete the supplier '{supplierToDelete?.name}'? This action cannot be undone.
-            {supplierToDelete && supplierToDelete.product_count > 0 && (
+            {supplierToDelete && supplierToDelete.productCount > 0 && (
               <span>
                 <br /><br />
-                <strong>Warning:</strong> This supplier has {supplierToDelete.product_count} associated products. 
+                <strong>Warning:</strong> This supplier has {supplierToDelete.productCount} associated products.
                 Deleting this supplier may affect these products.
               </span>
             )}
@@ -382,4 +382,4 @@ const SupplierList = () => {
   );
 };
 
-export default SupplierList; 
+export default SupplierList;

@@ -90,7 +90,7 @@ const UserDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  
+
   const isAdmin = currentUser && currentUser.role === 'admin';
   const isSelf = currentUser && currentUser.id === parseInt(id);
 
@@ -105,7 +105,7 @@ const UserDetail = () => {
       try {
         setLoading(true);
         const response = await userService.getUserById(id);
-        
+
         if (response.data) {
           setUser(response.data);
         } else {
@@ -157,9 +157,9 @@ const UserDetail = () => {
     return (
       <Box>
         <Alert severity="error" sx={{ mb: 4 }}>{error}</Alert>
-        <BackButton 
-          component={StyledLink} 
-          to="/users" 
+        <BackButton
+          component={StyledLink}
+          to="/users"
           variant="outlined"
         >
           Back to Users
@@ -172,9 +172,9 @@ const UserDetail = () => {
     return (
       <Box>
         <Alert severity="warning" sx={{ mb: 4 }}>User not found.</Alert>
-        <BackButton 
-          component={StyledLink} 
-          to="/users" 
+        <BackButton
+          component={StyledLink}
+          to="/users"
           variant="outlined"
         >
           Back to Users
@@ -198,9 +198,9 @@ const UserDetail = () => {
           )}
         </Typography>
         <Stack direction="row" spacing={2}>
-          <BackButton 
-            component={StyledLink} 
-            to="/users" 
+          <BackButton
+            component={StyledLink}
+            to="/users"
             variant="outlined"
           >
             Back to Users
@@ -224,12 +224,12 @@ const UserDetail = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>Personal Information</Typography>
               <Divider sx={{ mb: 3 }} />
-              
+
               <InfoItem>
                 <InfoLabel>Username</InfoLabel>
                 <InfoValue>{user.username}</InfoValue>
               </InfoItem>
-              
+
               <InfoItem>
                 <InfoLabel>Email</InfoLabel>
                 <InfoValue>{user.email || 'N/A'}</InfoValue>
@@ -253,7 +253,7 @@ const UserDetail = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>Account Information</Typography>
               <Divider sx={{ mb: 3 }} />
-              
+
               <InfoItem>
                 <InfoLabel>Role</InfoLabel>
                 <InfoValue>
@@ -265,10 +265,29 @@ const UserDetail = () => {
                 </InfoValue>
               </InfoItem>
 
+              {user.role === 'staff' && user.assigned_stores && user.assigned_stores.length > 0 && (
+                <InfoItem>
+                  <InfoLabel>Assigned Stores</InfoLabel>
+                  <InfoValue>
+                    <Box sx={{ mt: 1 }}>
+                      {user.assigned_stores.map(store => (
+                        <Chip
+                          key={store.id}
+                          label={store.name}
+                          color="info"
+                          size="small"
+                          sx={{ mr: 1, mb: 1 }}
+                        />
+                      ))}
+                    </Box>
+                  </InfoValue>
+                </InfoItem>
+              )}
+
               <InfoItem>
                 <InfoLabel>Date Joined</InfoLabel>
                 <InfoValue>
-                  {user.date_joined 
+                  {user.date_joined
                     ? new Date(user.date_joined).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -282,7 +301,7 @@ const UserDetail = () => {
               <InfoItem>
                 <InfoLabel>Last Login</InfoLabel>
                 <InfoValue>
-                  {user.last_login 
+                  {user.last_login
                     ? new Date(user.last_login).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -299,9 +318,9 @@ const UserDetail = () => {
                 <InfoItem>
                   <InfoLabel>Account Status</InfoLabel>
                   <InfoValue>
-                    <Chip 
-                      label={user.is_active ? 'Active' : 'Inactive'} 
-                      color={user.is_active ? 'success' : 'error'} 
+                    <Chip
+                      label={user.is_active ? 'Active' : 'Inactive'}
+                      color={user.is_active ? 'success' : 'error'}
                       size="small"
                     />
                   </InfoValue>
@@ -333,4 +352,4 @@ const UserDetail = () => {
   );
 };
 
-export default UserDetail; 
+export default UserDetail;

@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { supplierService } from '../../utils/api';
+import { supplierService, storeService } from '../../utils/api';
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Card,
   CardContent,
   Grid,
   Alert,
   CircularProgress,
-  Divider
+  Divider,
+  Chip,
+  Box as MuiBox
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import {
+  StyledTextField,
+  StyledFormControl,
+  StyledSelect,
+  StyledMenuItem,
+  StyledInputLabel,
+  StyledOutlinedInput
+} from '../common/FormStyles';
 
 // Styled components for CSS-based icons
 const StyledLink = styled(Link)({
@@ -55,38 +64,56 @@ const SupplierForm = () => {
     contact_person: '',
     phone: '',
     email: '',
-    address: ''
+    address: '',
+    store_ids: []
   });
-  
+
+  const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchSupplier = async () => {
-      if (!isEditMode) return;
-      
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const response = await supplierService.getSupplier(id);
-        const supplier = response.data.supplier || response.data;
-        
-        setFormData({
-          name: supplier.name || '',
-          contact_person: supplier.contact_person || '',
-          phone: supplier.phone || '',
-          email: supplier.email || '',
-          address: supplier.address || ''
-        });
+        // Fetch all stores
+        const storesResponse = await storeService.getAllStores();
+        if (storesResponse.data && storesResponse.data.stores) {
+          setStores(storesResponse.data.stores);
+        }
+
+        // If in edit mode, fetch supplier data
+        if (isEditMode) {
+          const supplierResponse = await supplierService.getSupplier(id);
+          const supplier = supplierResponse.data.supplier || supplierResponse.data;
+
+          // Get the store IDs that this supplier serves
+          let storeIds = [];
+          if (supplier.stores && Array.isArray(supplier.stores)) {
+            storeIds = supplier.stores.map(store => store.id);
+          } else if (supplier.store_ids && Array.isArray(supplier.store_ids)) {
+            storeIds = supplier.store_ids;
+          }
+
+          setFormData({
+            name: supplier.name || '',
+            contact_person: supplier.contact_person || '',
+            phone: supplier.phone || '',
+            email: supplier.email || '',
+            address: supplier.address || '',
+            store_ids: storeIds
+          });
+        }
       } catch (err) {
-        setError('Failed to load supplier data');
+        setError('Failed to load data');
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSupplier();
+    fetchData();
   }, [id, isEditMode]);
 
   const handleChange = (e) => {
@@ -94,6 +121,15 @@ const SupplierForm = () => {
     setFormData({
       ...formData,
       [name]: value
+    });
+  };
+
+  // Special handler for multi-select
+  const handleStoreChange = (event) => {
+    const { value } = event.target;
+    setFormData({
+      ...formData,
+      store_ids: typeof value === 'string' ? value.split(',') : value
     });
   };
 
@@ -133,9 +169,9 @@ const SupplierForm = () => {
         <Typography variant="h4" component="h1">
           {isEditMode ? 'Edit Supplier' : 'Add New Supplier'}
         </Typography>
-        <BackButton 
-          component={StyledLink} 
-          to="/suppliers" 
+        <BackButton
+          component={StyledLink}
+          to="/suppliers"
           variant="outlined"
         >
           Back to Suppliers
@@ -147,9 +183,9 @@ const SupplierForm = () => {
       <Card>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
+            <Grid container spacing={4}>
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Supplier Name"
                   name="name"
@@ -159,9 +195,9 @@ const SupplierForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Contact Person"
                   name="contact_person"
@@ -170,9 +206,9 @@ const SupplierForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Phone Number"
                   name="phone"
@@ -183,9 +219,9 @@ const SupplierForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Email Address"
                   name="email"
@@ -195,9 +231,9 @@ const SupplierForm = () => {
                   disabled={submitting}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="Address"
                   name="address"
@@ -208,10 +244,39 @@ const SupplierForm = () => {
                   disabled={submitting}
                 />
               </Grid>
+
+              <Grid item xs={12} sx={{ mb: 2 }}>
+                <StyledFormControl fullWidth disabled={submitting}>
+                  <StyledInputLabel id="stores-label">Stores Served</StyledInputLabel>
+                  <StyledSelect
+                    labelId="stores-label"
+                    multiple
+                    value={formData.store_ids}
+                    onChange={handleStoreChange}
+                    input={<StyledOutlinedInput id="select-multiple-stores" label="Stores Served" />}
+                    renderValue={(selected) => (
+                      <MuiBox sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((value) => {
+                          const store = stores.find(s => s.id === value);
+                          return (
+                            <Chip key={value} label={store ? store.name : value} />
+                          );
+                        })}
+                      </MuiBox>
+                    )}
+                  >
+                    {stores.map((store) => (
+                      <StyledMenuItem key={store.id} value={store.id}>
+                        {store.name}
+                      </StyledMenuItem>
+                    ))}
+                  </StyledSelect>
+                </StyledFormControl>
+              </Grid>
             </Grid>
-            
+
             <Divider sx={{ my: 4 }} />
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               <CancelButton
                 component={StyledLink}
@@ -238,4 +303,4 @@ const SupplierForm = () => {
   );
 };
 
-export default SupplierForm; 
+export default SupplierForm;

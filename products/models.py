@@ -9,9 +9,11 @@ class Store(models.Model):
     address = models.TextField()
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
+    manager = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_stores')
+    employees = models.ManyToManyField('users.CustomUser', related_name='assigned_stores', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return self.name
 
@@ -24,9 +26,10 @@ class Supplier(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
+    stores = models.ManyToManyField(Store, related_name='suppliers', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return self.name
 
@@ -44,10 +47,10 @@ class Product(models.Model):
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='products')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.name} ({self.sku})"
-    
+
     @property
     def is_low_stock(self):
         """Check if the product is below the threshold quantity."""

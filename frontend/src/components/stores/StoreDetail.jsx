@@ -144,7 +144,7 @@ const StoreDetail = () => {
       try {
         setLoading(true);
         const storeResponse = await storeService.getStore(id);
-        
+
         if (storeResponse.data) {
           if (storeResponse.data.id) {
             setStore(storeResponse.data);
@@ -156,11 +156,11 @@ const StoreDetail = () => {
         } else {
           throw new Error('No store data received');
         }
-        
+
         const productsResponse = await productService.getAllProducts();
-        
+
         let productsList = [];
-        
+
         if (productsResponse.data) {
           if (Array.isArray(productsResponse.data)) {
             productsList = productsResponse.data;
@@ -170,15 +170,15 @@ const StoreDetail = () => {
             console.error('Unexpected products data format:', productsResponse.data);
             setProducts([]);
           }
-          
+
           if (productsList.length > 0) {
             const storeProducts = productsList.filter(
               product => {
-                const storeId = 
+                const storeId =
                   (product.store && product.store.id) ||
                   product.store_id ||
                   (product.store && product.store);
-                
+
                 return storeId === parseInt(id) || storeId === id;
               }
             );
@@ -190,7 +190,12 @@ const StoreDetail = () => {
         }
       } catch (err) {
         console.error('Failed to load store details:', err);
-        setError('Failed to load store details');
+        // Use the error message from the server if available
+        if (err.response && err.response.data && err.response.data.error) {
+          setError(err.response.data.error);
+        } else {
+          setError('Failed to load store details. Please try again later.');
+        }
         setProducts([]);
       } finally {
         setLoading(false);
@@ -211,7 +216,7 @@ const StoreDetail = () => {
 
   const sortProducts = (productsToSort) => {
     if (!Array.isArray(productsToSort)) return [];
-    
+
     return [...productsToSort].sort((a, b) => {
       let aValue = a[sortKey];
       let bValue = b[sortKey];
@@ -290,9 +295,9 @@ const StoreDetail = () => {
     return (
       <Box>
         <Alert severity="error" sx={{ mt: 4, mb: 4 }}>{error}</Alert>
-        <BackButton 
-          component={StyledLink} 
-          to="/stores" 
+        <BackButton
+          component={StyledLink}
+          to="/stores"
           variant="outlined"
         >
           Back to Stores
@@ -307,9 +312,9 @@ const StoreDetail = () => {
         <Alert severity="warning" sx={{ mt: 4, mb: 4 }}>
           Store not found.
         </Alert>
-        <BackButton 
-          component={StyledLink} 
-          to="/stores" 
+        <BackButton
+          component={StyledLink}
+          to="/stores"
           variant="outlined"
         >
           Back to Stores
@@ -330,9 +335,9 @@ const StoreDetail = () => {
           {store.name}
         </Typography>
         <Stack direction="row" spacing={2}>
-          <BackButton 
-            component={StyledLink} 
-            to="/stores" 
+          <BackButton
+            component={StyledLink}
+            to="/stores"
             variant="outlined"
           >
             Back to Stores
@@ -365,27 +370,36 @@ const StoreDetail = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>Store Information</Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Location</Typography>
                 <Typography variant="body1">{store.location || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Address</Typography>
                 <Typography variant="body1">{store.address || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Manager</Typography>
-                <Typography variant="body1">{store.manager || 'N/A'}</Typography>
+                <Typography variant="body1">
+                  {store.manager
+                    ? (typeof store.manager === 'object'
+                        ? (store.manager.name || store.manager.username ||
+                           (store.manager.first_name && store.manager.last_name
+                             ? `${store.manager.first_name} ${store.manager.last_name}`
+                             : store.manager.username))
+                        : store.manager)
+                    : 'N/A'}
+                </Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Phone</Typography>
                 <Typography variant="body1">{store.phone || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Email</Typography>
                 <Typography variant="body1">{store.email || 'N/A'}</Typography>
@@ -393,13 +407,13 @@ const StoreDetail = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>Inventory Statistics</Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={4}>
                   <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light' }}>
@@ -407,14 +421,14 @@ const StoreDetail = () => {
                     <Typography variant="body2" sx={{ color: 'success.dark' }}>In Stock</Typography>
                   </Paper>
                 </Grid>
-                
+
                 <Grid item xs={4}>
                   <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.light' }}>
                     <Typography variant="h4" sx={{ color: 'warning.dark' }}>{lowStockCount}</Typography>
                     <Typography variant="body2" sx={{ color: 'warning.dark' }}>Low Stock</Typography>
                   </Paper>
                 </Grid>
-                
+
                 <Grid item xs={4}>
                   <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light' }}>
                     <Typography variant="h4" sx={{ color: 'error.dark' }}>{outOfStockCount}</Typography>
@@ -422,7 +436,7 @@ const StoreDetail = () => {
                   </Paper>
                 </Grid>
               </Grid>
-              
+
               <Box sx={{ mt: 2 }}>
                 <Typography variant="body2" color="text.secondary">Total Products</Typography>
                 <Typography variant="body1">{sortedProducts.length}</Typography>
@@ -431,24 +445,24 @@ const StoreDetail = () => {
           </Card>
         </Grid>
       </Grid>
-      
+
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">Products</Typography>
             <Stack direction="row" spacing={2}>
               {isManagerOrAdmin && (
-                <AddButton 
-                  component={StyledLink} 
-                  to={`/products/new?store=${id}`} 
-                  variant="contained" 
+                <AddButton
+                  component={StyledLink}
+                  to={`/products/new?store=${id}`}
+                  variant="contained"
                   color="primary"
                   size="small"
                 >
                   Add Product
                 </AddButton>
               )}
-              <Button 
+              <Button
                 variant="outlined"
                 onClick={toggleViewMode}
                 startIcon={<ViewIcon viewMode={viewMode} />}
@@ -458,7 +472,7 @@ const StoreDetail = () => {
               </Button>
             </Stack>
           </Box>
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <TextField
               placeholder="Search products..."
@@ -483,15 +497,15 @@ const StoreDetail = () => {
               }}
             />
           </Box>
-          
+
           {sortedProducts.length === 0 && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              {filterText 
-                ? 'No products match your search. Try a different search term or clear the filter.' 
+              {filterText
+                ? 'No products match your search. Try a different search term or clear the filter.'
                 : 'No products found in this store. Add a product to get started.'}
             </Alert>
           )}
-          
+
           {sortedProducts.length > 0 && viewMode === 'table' && (
             <TableContainer component={Paper}>
               <Table sx={{ minWidth: 650 }}>
@@ -593,7 +607,7 @@ const StoreDetail = () => {
               </Table>
             </TableContainer>
           )}
-          
+
           {sortedProducts.length > 0 && viewMode === 'grid' && (
             <Grid container spacing={3}>
               {sortedProducts.map((product) => (
@@ -625,7 +639,7 @@ const StoreDetail = () => {
                     </CardContent>
                     <Divider />
                     <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between' }}>
-                      <Button 
+                      <Button
                         component={StyledLink}
                         to={`/products/${product.id}`}
                         size="small"
@@ -665,7 +679,7 @@ const StoreDetail = () => {
             {products.length > 0 && (
               <span>
                 <br /><br />
-                <strong>Warning:</strong> This store has {products.length} associated products. 
+                <strong>Warning:</strong> This store has {products.length} associated products.
                 Deleting this store may affect these products.
               </span>
             )}
@@ -684,4 +698,4 @@ const StoreDetail = () => {
   );
 };
 
-export default StoreDetail; 
+export default StoreDetail;

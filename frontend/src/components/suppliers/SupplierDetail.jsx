@@ -104,7 +104,7 @@ const SupplierDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [supplier, setSupplier] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +121,7 @@ const SupplierDetail = () => {
     try {
       setLoading(true);
       const supplierResponse = await supplierService.getSupplier(id);
-      
+
       if (supplierResponse.data && supplierResponse.data.supplier) {
         setSupplier(supplierResponse.data.supplier);
       } else if (supplierResponse.data) {
@@ -129,23 +129,23 @@ const SupplierDetail = () => {
       } else {
         throw new Error('Invalid supplier data received');
       }
-      
+
       // Get all products and filter by supplier
       const productsResponse = await productService.getAllProducts();
       let productList = [];
-      
+
       if (productsResponse.data) {
         if (Array.isArray(productsResponse.data)) {
           productList = productsResponse.data;
         } else if (productsResponse.data.products && Array.isArray(productsResponse.data.products)) {
           productList = productsResponse.data.products;
         }
-        
+
         // Filter products by supplier ID
         const supplierProducts = productList.filter(
           product => product.supplier && (product.supplier.id === parseInt(id) || product.supplier.id === id)
         );
-        
+
         setProducts(supplierProducts);
       }
     } catch (err) {
@@ -155,7 +155,7 @@ const SupplierDetail = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchSupplierData();
   }, [id]);
@@ -193,7 +193,7 @@ const SupplierDetail = () => {
   // Sort products
   const sortProducts = (productsToSort) => {
     if (!Array.isArray(productsToSort)) return [];
-    
+
     return [...productsToSort].sort((a, b) => {
       let aValue = a[sortKey];
       let bValue = b[sortKey];
@@ -236,10 +236,10 @@ const SupplierDetail = () => {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
-        <Button 
-          component={StyledLink} 
-          to="/suppliers" 
-          variant="contained" 
+        <Button
+          component={StyledLink}
+          to="/suppliers"
+          variant="contained"
           color="primary"
         >
           Back to Suppliers
@@ -254,10 +254,10 @@ const SupplierDetail = () => {
         <Alert severity="warning" sx={{ mb: 3 }}>
           The supplier you are looking for does not exist or has been removed.
         </Alert>
-        <Button 
-          component={StyledLink} 
-          to="/suppliers" 
-          variant="contained" 
+        <Button
+          component={StyledLink}
+          to="/suppliers"
+          variant="contained"
           color="primary"
         >
           Back to Suppliers
@@ -273,14 +273,14 @@ const SupplierDetail = () => {
           {supplier.name}
         </Typography>
         <Stack direction="row" spacing={2}>
-          <BackButton 
-            component={StyledLink} 
-            to="/suppliers" 
+          <BackButton
+            component={StyledLink}
+            to="/suppliers"
             variant="outlined"
           >
             Back to Suppliers
           </BackButton>
-          {isManagerOrAdmin && (
+          {isAdmin && (
             <EditButton
               component={StyledLink}
               to={`/suppliers/${id}/edit`}
@@ -308,27 +308,27 @@ const SupplierDetail = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>Supplier Information</Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Contact Person</Typography>
                 <Typography variant="body1">{supplier.contact_name || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Email</Typography>
                 <Typography variant="body1">{supplier.email || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Phone</Typography>
                 <Typography variant="body1">{supplier.phone || 'N/A'}</Typography>
               </Box>
-              
+
               <Box sx={{ mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Address</Typography>
                 <Typography variant="body1">{supplier.address || 'N/A'}</Typography>
               </Box>
-              
+
               {supplier.website && (
                 <Box sx={{ mb: 1 }}>
                   <Typography variant="body2" color="text.secondary">Website</Typography>
@@ -342,13 +342,13 @@ const SupplierDetail = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>Statistics</Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
@@ -356,7 +356,7 @@ const SupplierDetail = () => {
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>Products</Typography>
                   </Paper>
                 </Grid>
-                
+
                 <Grid item xs={6}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
@@ -369,7 +369,7 @@ const SupplierDetail = () => {
                   </Paper>
                 </Grid>
               </Grid>
-              
+
               {supplier.notes && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" color="text.secondary">Notes</Typography>
@@ -380,13 +380,13 @@ const SupplierDetail = () => {
           </Card>
         </Grid>
       </Grid>
-      
+
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6">Products</Typography>
           </Box>
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <TextField
               placeholder="Search products..."
@@ -411,11 +411,11 @@ const SupplierDetail = () => {
               }}
             />
           </Box>
-          
+
           {sortedProducts.length === 0 ? (
             <Alert severity="info" sx={{ mb: 2 }}>
-              {filterText 
-                ? 'No products match your search. Try a different search term or clear the filter.' 
+              {filterText
+                ? 'No products match your search. Try a different search term or clear the filter.'
                 : 'No products found for this supplier.'}
             </Alert>
           ) : (
@@ -488,7 +488,7 @@ const SupplierDetail = () => {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteConfirmOpen}
@@ -501,7 +501,7 @@ const SupplierDetail = () => {
             {products.length > 0 && (
               <span>
                 <br /><br />
-                <strong>Warning:</strong> This supplier has {products.length} associated products. 
+                <strong>Warning:</strong> This supplier has {products.length} associated products.
                 Deleting this supplier may affect these products.
               </span>
             )}
@@ -520,4 +520,4 @@ const SupplierDetail = () => {
   );
 };
 
-export default SupplierDetail; 
+export default SupplierDetail;
