@@ -62,7 +62,6 @@ A full-stack inventory management system built with Django (backend) and React (
 1. Clone the repository:
    ```
    git clone <repository-url>
-   cd inventory-management-system
    ```
 
 2. Create and activate a virtual environment:
